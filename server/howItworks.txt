@@ -1,0 +1,14 @@
+okay so for backend
+what we did is 
+
+1. we created a room instance where the only 2 user will be joiing if room contains 2 user then other cant join it and so on 
+
+2. if 2 users are there then c1 will initate offer 
+
+3. at frontend c2 recieves that offer via socket and it emits answer from there
+
+4. we listen that answer here and again send that answer to c1
+
+5. lastly we are listing for ice candidate and sending that to room 
+
+6. lastly we handled disconnect one .
