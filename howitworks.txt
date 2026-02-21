@@ -1,0 +1,11 @@
+The whole system work like thiss ::
+step1:
+c1 sends its media condigs that is sdi sesion description information/offer  to the signalling server .
+
+signalling server sends that offer to c2 ;
+
+c2 acepts that offers and then answer its offer by providing answer which includes all media configs to it too . c2 also add the c1 offer to its remote address and adds its own answer  to local address and  send to signalling server .
+
+signalling server recieves that answer and send to c1 c1 add its offer to local and answer to remote description 
+
+after that c1 and c2 both goes for getting ice thats basically piblic ip and shares it via signalling server .

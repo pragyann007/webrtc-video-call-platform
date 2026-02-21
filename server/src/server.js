@@ -17,8 +17,25 @@ const io = new Server(server,{
 })
 
 
+
+let connectedUser = {}
+
 io.on("connection",(socket)=>{
-    console.log(`socket connected with an id of ${socket.id}`)
+    console.log(`socket connected with an id of ${socket.id}`);
+
+    socket.on("join-room",data=>{
+        console.log("data is ",data)
+        connectedUser[data.name] = data ; 
+
+        io.emit("connected-user",data);
+
+        
+    })
+
+
+
+
+
 })
 
 app.get("/",(req,res)=>{
