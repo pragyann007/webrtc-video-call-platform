@@ -62,6 +62,17 @@ io.on('connection', (socket) => {
         socket.on("offer",({offer,room})=>{
             socket.to(room).emit("offer",{offer,room});
         })
+
+        socket.on("answer",({answer,room})=>{
+            socket.to(room).emit("answer",{answer,room});
+        })
+
+
+        socket.on("ice-candidate",({candidate,room})=>{
+            socket.to(room).emit("ice-candidate",{candidate,room});
+        })
+
+
        
 
 
