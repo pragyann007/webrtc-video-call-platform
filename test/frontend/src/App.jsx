@@ -12,11 +12,17 @@ const App = () => {
     socket.emit("find-match");
     socket.on("matched",({room,initiator})=>{
       console.log("matched in room:",room,"initiator:",initiator)
+
+  
+
     })
 
     socket.on("waiting",()=>{
       console.log("waiting for a match...")
     })
+
+    // web rtc implementation will go here
+    
 
 
 
