@@ -7,9 +7,12 @@ const App = () => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const currentRoomRef = useRef(null);
+  const dataChannelRef = useRef(null);
 
   const [localStream, setLocalStream] = useState(null);
   const [callStarted, setCallStarted] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
 
   // ---------------- SOCKET SETUP ----------------
   useEffect(() => {
@@ -48,7 +51,7 @@ const App = () => {
     return () => socket.disconnect();
   }, []);
 
-  // ---------------- LOCAL VIDEO FIX ----------------
+  // ---------------- LOCAL VIDEO SYNC ----------------
   useEffect(() => {
     if (localStream && localVideoRef.current) {
       localVideoRef.current.srcObject = localStream;
@@ -63,15 +66,13 @@ const App = () => {
     });
 
     setLocalStream(stream);
-
     createPeerConnection(stream);
 
     setCallStarted(true);
-
     socketRef.current.emit("find-match");
   };
 
-  // ---------------- PEER CONNECTION ----------------
+  // ---------------- CREATE PEER ----------------
   const createPeerConnection = (stream) => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -97,11 +98,23 @@ const App = () => {
       }
     };
 
+    // 🔥 RECEIVER SIDE DATA CHANNEL
+    pc.ondatachannel = (event) => {
+      const channel = event.channel;
+      dataChannelRef.current = channel;
+      setupDataChannel(channel);
+    };
+
     pcRef.current = pc;
   };
 
-  // ---------------- OFFER ----------------
+  // ---------------- OFFER (INITIATOR) ----------------
   const createOffer = async () => {
+    // 🔥 CREATE DATA CHANNEL FIRST
+    const channel = pcRef.current.createDataChannel("chat");
+    dataChannelRef.current = channel;
+    setupDataChannel(channel);
+
     const offer = await pcRef.current.createOffer();
     await pcRef.current.setLocalDescription(offer);
 
@@ -122,6 +135,45 @@ const App = () => {
       answer,
       room: currentRoomRef.current,
     });
+  };
+
+  // ---------------- DATA CHANNEL SETUP ----------------
+  const setupDataChannel = (channel) => {
+    channel.onopen = () => {
+      console.log("Data channel opened 🔥");
+    };
+
+    channel.onmessage = (event) => {
+      setMessages((prev) => [
+        ...prev,
+        { text: event.data, sender: "remote" },
+      ]);
+    };
+
+    channel.onclose = () => {
+      console.log("Data channel closed");
+    };
+  };
+
+  // ---------------- SEND MESSAGE ----------------
+  const sendMessage = () => {
+    const channel = dataChannelRef.current;
+
+    if (!channel || channel.readyState !== "open") {
+      console.log("Channel not ready");
+      return;
+    }
+
+    if (!input.trim()) return;
+
+    channel.send(input);
+
+    setMessages((prev) => [
+      ...prev,
+      { text: input, sender: "me" },
+    ]);
+
+    setInput("");
   };
 
   return (
@@ -146,6 +198,28 @@ const App = () => {
           />
         </div>
       )}
+
+      {/* CHAT UI */}
+      <div style={{ width: "300px", marginTop: "20px" }}>
+        <div style={{ height: "200px", overflowY: "auto" }}>
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              style={{
+                textAlign: msg.sender === "me" ? "right" : "left",
+              }}
+            >
+              {msg.text}
+            </div>
+          ))}
+        </div>
+
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+        />
+        <button onClick={sendMessage}>Send</button>
+      </div>
     </div>
   );
 };
